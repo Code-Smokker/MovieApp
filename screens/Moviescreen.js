@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { Dimensions, Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { ChevronLeftIcon, HeartIcon } from 'react-native-heroicons/outline';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchMovieDetails, fetchMoviesBySearch } from '../api/moviedb';
 import Cast from '../components/cast';
-import MovieList from '../components/movieList';
 import Loading from '../components/loading';
+import MovieList from '../components/movieList';
 import { styles } from '../thems';
-
 
 const { width, height } = Dimensions.get('window');
 const ios = Platform.OS === 'ios';
@@ -19,16 +19,41 @@ export default function Moviescreen() {
     const [isFavourite, toggleFavourite] = useState(false);
     const navigate = useNavigation();
     const [loading, setLoading] = useState(false);
-    const [cast, setCast] = useState([1, 2, 3, 4]);
-    const [similarMovies, setSimilarMovies] = useState([
-        { id: 1, title: 'Inception' },
-        { id: 2, title: 'Interstellar' },
-        { id: 3, title: 'The Dark Knight' },
-        { id: 4, title: 'Tenet' }
-    ]);
+    const [movie, setMovie] = useState({});
+
+    const [similarMovies, setSimilarMovies] = useState([]);
 
     useEffect(() => {
+        setLoading(true);
+        if (item && item.imdbID) {
+            getMovieDetails(item.imdbID);
+        } else {
+            setLoading(false);
+        }
     }, [item]);
+
+    const getMovieDetails = async id => {
+        const data = await fetchMovieDetails(id);
+        if (data) {
+            setMovie(data);
+            getSimilarMovies(data.Title);
+        }
+        setLoading(false);
+    }
+
+    const getSimilarMovies = async title => {
+        const fallbacks = ["fast", "avengers", "marvel", "dark", "spider", "batman"];
+        // query based on the first word of the existing movie title
+        const queryTerm = title ? title.split(' ').filter(w => w.length > 2)[0] || fallbacks[0] : fallbacks[0];
+        const data = await fetchMoviesBySearch(queryTerm);
+        if (data && data.Response === "True" && data.Search) {
+            // Filter out the exact same current movie to avoid self-duplication in Similar Movies
+            setSimilarMovies(data.Search.filter(m => m.imdbID !== item.imdbID));
+        } else {
+            const fb = await fetchMoviesBySearch(fallbacks[Math.floor(Math.random() * fallbacks.length)]);
+            if (fb && fb.Response === "True") setSimilarMovies(fb.Search);
+        }
+    }
 
     return (
         <ScrollView
@@ -50,9 +75,23 @@ export default function Moviescreen() {
                         <Loading />
                     ) : (
                         <View>
-                            <Image source={require('../assets/images/uri.png')}
-                                style={{ width: width, height: height * 0.55 }}
-                            />
+                            {
+                                movie?.Poster && movie.Poster !== "N/A" ? (
+                                    <Image
+                                        source={{ uri: movie.Poster }}
+                                        style={{ width: width, height: height * 0.55 }}
+                                    />
+                                ) : (
+                                    <View
+                                        style={{ width: width, height: height * 0.55 }}
+                                        className="bg-neutral-800 items-center justify-center"
+                                    >
+                                        <Text className="text-white text-5xl font-bold tracking-widest text-center mt-20">
+                                            {(movie?.Title || item?.Title || "NA").substring(0, 2).toUpperCase()}
+                                        </Text>
+                                    </View>
+                                )
+                            }
                             <LinearGradient
                                 colors={['transparent', 'rgba(23,23,23,0.8)', 'rgba(23,23,23,1)']}
                                 style={{ width, height: height * 0.40, position: 'absolute', bottom: 0 }}
@@ -69,27 +108,27 @@ export default function Moviescreen() {
                     <View>
                         <View style={{ marginTop: -(height * 0.09) }} className="space-y-3">
                             <Text className="text-white text-3xl text-center font-bold tracking-wider">
-                                {item?.title || "Movie Name"}
+                                {movie?.Title || item?.Title || "Unknown"}
                             </Text>
                             <Text className="text-neutral-400 font-semibold text-base text-center">
-                                Release Date - 2022
+                                Released • {movie?.Released || 'N/A'} • imdb {movie?.imdbRating || 'N/A'}
                             </Text>
                             <View className="flex-row justify-center mx-4 space-x-2">
-                                <Text className="text-neutral-400 font-semibold text-base text-center">
-                                    Action |
-                                </Text>
-                                <Text className="text-neutral-400 font-semibold text-base text-center">
-                                    Thriller |
-                                </Text>
-                                <Text className="text-neutral-400 font-semibold text-base text-center">
-                                    Motivational
-                                </Text>
+                                {
+                                    movie?.Genre?.split(',').map((genre, index, arr) => {
+                                        return (
+                                            <Text key={index} className="text-neutral-400 font-semibold text-base text-center">
+                                                {genre.trim()} {index + 1 !== arr.length ? '|' : ''}
+                                            </Text>
+                                        )
+                                    })
+                                }
                             </View>
                             <Text className="text-neutral-400 mx-4 tracking-wide">
-                                Uri: The Surgical Strike is a 2019 Indian Hindi-language war action film written and directed by debutant Aditya Dhar and produced by Ronnie Screwvala under the RSVP Movies banner.[5] An account based on the real story of the retaliation to the 2016 Uri attack, the film stars Vicky Kaushal along with Yami Gautam, Paresh Rawal, Kirti Kulhari, and Mohit Raina in pivotal roles, and tells the story of Major Vihaan Shergill (Kaushal) of the Para (Special Forces), who played a leading role in the events.[6][7]
+                                {movie?.Plot || "Biography overview unavailable."}
                             </Text>
                         </View>
-                        <Cast navigation={navigate} cast={cast} />
+                        <Cast navigation={navigate} actors={movie?.Actors} />
                         <MovieList title="Similar Movies" hideSeeAll={true} data={similarMovies} />
                     </View>
                 )

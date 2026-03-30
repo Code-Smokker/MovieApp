@@ -1,10 +1,12 @@
-import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
-import { Dimensions, Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { ChevronLeftIcon, HeartIcon } from 'react-native-heroicons/outline';
+import { UserIcon } from 'react-native-heroicons/solid';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Loading from '../components/loading';
 import MovieList from '../components/movieList';
+import { fetchMoviesBySearch } from '../api/moviedb';
 import { styles } from '../thems';
 
 var { width, height } = Dimensions.get('window');
@@ -13,14 +15,37 @@ const verticalMargin = ios ? '' : 'my-3';
 
 export default function PersonScreen() {
     const navigate = useNavigation();
+    const { params: item } = useRoute();
     const [isFavourite, toggleFavourite] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [personMovies, setPersonMovies] = useState([
-        { id: 1, title: 'Uri: The Surgical Strike' },
-        { id: 2, title: 'Masaan' },
-        { id: 3, title: 'Raazi' },
-        { id: 4, title: 'Sanju' }
-    ]);
+    const [personMovies, setPersonMovies] = useState([]);
+
+    const personName = item?.title || "Unknown Actor";
+
+    function getInitials(name) {
+        if (!name) return "NA";
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
+    }
+
+    useEffect(() => {
+        setLoading(true);
+        getPersonMovies();
+    }, []);
+
+    const getPersonMovies = async () => {
+        const fallbacks = ["marvel", "avengers", "fast", "dark", "batman"];
+        const randomTerm = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        const data = await fetchMoviesBySearch(randomTerm);
+        if(data && data.Response === "True" && data.Search) {
+            setPersonMovies(data.Search);
+        }
+        setLoading(false);
+    }
 
     return (
         <ScrollView className="flex-1 bg-neutral-900" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -47,45 +72,45 @@ export default function PersonScreen() {
                                 shadowOffset: { width: 0, height: 5 },
                                 shadowOpacity: 1
                             }}>
-                            <View className="items-center rounded-full overflow-hidden h-72 w-72 border-2 border-neutral-500">
-                                <Image source={require('../assets/images/uri.png')}
-                                    style={{ height: height * 0.43, width: width * 0.74 }}
-                                />
+                            <View className="h-40 w-40 rounded-full bg-neutral-700 items-center justify-center border-2 border-neutral-500">
+                                <Text className="text-white text-5xl font-bold tracking-widest">
+                                    {getInitials(personName)}
+                                </Text>
                             </View>
                         </View>
 
                         <View className="mt-6">
                             <Text className="text-3xl text-white font-bold text-center">
-                                Vicky Kaushal
+                                {personName}
                             </Text>
                             <Text className="text-base text-neutral-500 text-center">
-                                Mumbai, Maharashtra
+                                Hollywood, USA
                             </Text>
                         </View>
 
                         <View className="mx-3 p-4 mt-6 flex-row justify-between items-center bg-neutral-700 rounded-full">
                             <View className="border-r-2 border-r-neutral-400 px-2 items-center">
-                                <Text className="text-white font-semibold">Gender</Text>
-                                <Text className="text-neutral-300 text-sm">Male</Text>
+                                <Text className="text-white font-semibold flex-col text-center">Gender</Text>
+                                <Text className="text-neutral-300 text-sm">N/A</Text>
                             </View>
                             <View className="border-r-2 border-r-neutral-400 px-2 items-center">
-                                <Text className="text-white font-semibold">Birthday</Text>
-                                <Text className="text-neutral-300 text-sm">1988-05-16</Text>
+                                <Text className="text-white font-semibold flex-col text-center">Birthday</Text>
+                                <Text className="text-neutral-300 text-sm">N/A</Text>
                             </View>
                             <View className="border-r-2 border-r-neutral-400 px-2 items-center">
-                                <Text className="text-white font-semibold">Known for</Text>
+                                <Text className="text-white font-semibold flex-col text-center">Known for</Text>
                                 <Text className="text-neutral-300 text-sm">Acting</Text>
                             </View>
                             <View className="px-2 items-center">
-                                <Text className="text-white font-semibold">Popularity</Text>
-                                <Text className="text-neutral-300 text-sm">84.23</Text>
+                                <Text className="text-white font-semibold flex-col text-center">Popularity</Text>
+                                <Text className="text-neutral-300 text-sm">100.0</Text>
                             </View>
                         </View>
 
                         <View className="my-6 mx-4 space-y-2">
                             <Text className="text-white text-lg">Biography</Text>
                             <Text className="text-neutral-400 mx-4 tracking-wide">
-                                Vicky Kaushal (pronounced born 16 May 1988) is an Indian actor who works in Hindi films. Known for his work across a range of genres, he has received several accolades, including a National Film Award and three Filmfare Awards, Kaushal has featured in Forbes India's Celebrity 100 list and is regarded as one of the prominent actors of his generation in contemporary Hindi cinema.
+                                {personName} is an incredibly talented prominent actor in contemporary cinema. Known for their work across a range of high-profile blockbuster genres, {personName} has received several critical accolades and is widely regarded as one of the best character-actors of their generation.
                             </Text>
                         </View>
 

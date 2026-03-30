@@ -1,8 +1,28 @@
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { UserIcon } from 'react-native-heroicons/solid';
 
-export default function Cast({ cast, navigation }) {
-    let personName = 'Vicky Kaushal';
-    let characterName = 'Major Vihaan Shergill';
+export default function Cast({ actors, navigation }) {
+    // Parse OMDb comma-separated actors string into a clean array
+    const castArray = actors && actors !== "N/A" ? actors.split(',').map(name => name.trim()) : [];
+
+    function getInitials(name) {
+        if (!name) return "NA";
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
+    }
+
+    if (castArray.length === 0) {
+        return (
+            <View className="mb-8 mx-4">
+                <Text className="text-white text-lg mb-5">Cast</Text>
+                <Text className="text-neutral-400 text-sm">No cast available</Text>
+            </View>
+        );
+    }
 
     return (
         <View className="mb-8">
@@ -12,25 +32,21 @@ export default function Cast({ cast, navigation }) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 16 }}
             >
-                {cast && cast.map((item, index) => {
+                {castArray.map((personName, index) => {
                     return (
                         <TouchableOpacity
                             key={index}
                             className="mr-4 items-center"
-                            onPress={() => navigation.navigate('Person', item)}
+                            onPress={() => navigation.navigate('Person', { title: personName })}
                         >
-                            <View className="rounded-full h-24 w-20 overflow-hidden border border-neutral-500">
-                                <Image
-                                    source={require('../assets/images/uri.png')}
-                                    className="rounded-2xl h-24 w-20"
-                                />
+                            <View className="rounded-full h-20 w-20 items-center justify-center bg-neutral-700 border border-neutral-500">
+                                <Text className="text-white text-3xl font-bold tracking-widest">
+                                    {getInitials(personName)}
+                                </Text>
                             </View>
 
-                            <Text className="text-white text-xs mt-1">
-                                {characterName.length > 10 ? characterName.slice(0, 10) + '...' : characterName}
-                            </Text>
-                            <Text className="text-neutral-400 text-xs mt-1">
-                                {personName.length > 10 ? personName.slice(0, 10) + '...' : personName}
+                            <Text className="text-neutral-300 text-xs mt-2 text-center">
+                                {personName.length > 14 ? personName.slice(0, 14) + '...' : personName}
                             </Text>
                         </TouchableOpacity>
                     );

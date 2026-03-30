@@ -9,3 +9,7 @@ export const styles = {
   text: { color: theme.text },
   background: { backgroundColor: theme.background },
 };
+
+
+// API KEY
+export const apiKey = 'eac7e9fe';

@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Bars3BottomLeftIcon, MagnifyingGlassIcon } from 'react-native-heroicons/outline';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,29 +7,40 @@ import { useNavigation } from '@react-navigation/native';
 import MovieList from '../components/movieList';
 import TredingMovies from '../components/tredingMovies';
 import Loading from '../components/loading';
+import { fetchMoviesBySearch } from '../api/moviedb';
 import { theme } from '../thems';
 
 const ios = Platform.OS === 'ios';
 
 export default function Homescreen() {
   const navigate = useNavigation();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   
-  const [trending, setTrending] = useState([
-    { id: 1, title: 'Uri: The Surgical Strike' },
-    { id: 2, title: 'Masaan' },
-    { id: 3, title: 'Raazi' },
-  ]);
-  const [upcoming, setUpcoming] = useState([
-    { id: 1, title: 'Ant-Man and the Wasp' },
-    { id: 2, title: 'Spider-Man: No Way Home' },
-    { id: 3, title: 'Avengers: Endgame' },
-  ]);
-  const [topRated, setTopRated] = useState([
-    { id: 1, title: 'The Dark Knight' },
-    { id: 2, title: 'Inception' },
-    { id: 3, title: 'Interstellar' },
-  ]);
+  const [trending, setTrending] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+
+  useEffect(() => {
+    getTrendingMovies();
+    getUpcomingMovies();
+    getTopRatedMovies();
+  }, []);
+
+  const getTrendingMovies = async () => {
+    const data = await fetchMoviesBySearch("Marvel");
+    if(data && data.Search) setTrending(data.Search);
+    setLoading(false);
+  }
+  
+  const getUpcomingMovies = async () => {
+    const data = await fetchMoviesBySearch("Avengers");
+    if(data && data.Search) setUpcoming(data.Search);
+  }
+
+  const getTopRatedMovies = async () => {
+    const data = await fetchMoviesBySearch("Batman");
+    if(data && data.Search) setTopRated(data.Search);
+  }
 
   return (
     <View className="flex-1 bg-neutral-800">
